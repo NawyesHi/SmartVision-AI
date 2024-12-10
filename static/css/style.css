@@ -1,0 +1,23 @@
+.video-container {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden;
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.video-container img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+#statusMessage {
+    padding: 10px;
+    font-weight: bold;
+}

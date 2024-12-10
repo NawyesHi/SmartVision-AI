@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Detection - Smart Vision</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-orange: rgb(247, 128, 41);
+            --dark-black: #111111;
+        }
+
+        body {
+            background-color: var(--dark-black);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: white;
+        }
+
+        .navbar {
+            background: linear-gradient(to right, rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0.8)) !important;
+            border-bottom: 2px solid var(--primary-orange);
+            padding: 1.5rem 0;
+            box-shadow: 0 4px 20px rgba(247, 128, 41, 0.15);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar-brand {
+            color: var(--primary-orange) !important;
+            font-weight: bold;
+            font-size: 2.2rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-brand:hover {
+            transform: translateY(-2px);
+        }
+
+        .navbar-logo {
+            height: 80px;
+            width: auto;
+            transition: all 0.4s ease;
+            filter: drop-shadow(0 0 8px rgba(247, 128, 41, 0.3));
+        }
+
+        .navbar-logo:hover {
+            transform: scale(1.08) rotate(5deg);
+            filter: drop-shadow(0 0 15px rgba(247, 128, 41, 0.6));
+        }
+
+        .navbar .container {
+            max-width: 1400px;
+        }
+
+        .btn-custom {
+            padding: 0.8rem 1.8rem;
+            font-size: 1rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-custom::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to right,
+                transparent,
+                rgba(255, 255, 255, 0.1),
+                transparent
+            );
+            transition: all 0.5s ease;
+        }
+
+        .btn-custom:hover::before {
+            left: 100%;
+        }
+
+        .btn-custom:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(247, 128, 41, 0.3);
+        }
+
+        .btn-home {
+            background-color: transparent;
+            border: 2px solid var(--primary-orange);
+            color: var(--primary-orange);
+        }
+
+        .btn-home:hover {
+            background-color: var(--primary-orange);
+            color: white;
+        }
+
+        .btn-upload {
+            background-color: var(--primary-orange);
+            border: 2px solid var(--primary-orange);
+            color: white;
+        }
+
+        .btn-upload:hover {
+            background-color: transparent;
+            color: var(--primary-orange);
+        }
+
+        @keyframes logoAppear {
+            0% { 
+                opacity: 0;
+                transform: translateY(-20px) rotate(-10deg);
+            }
+            100% { 
+                opacity: 1;
+                transform: translateY(0) rotate(0);
+            }
+        }
+
+        .navbar-logo {
+            animation: logoAppear 1s ease-out forwards;
+        }
+
+        /* Add shine effect to navbar */
+        .navbar::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(
+                to right,
+                transparent,
+                rgba(247, 128, 41, 0.5),
+                transparent
+            );
+        }
+
+        .main-container {
+            flex: 1;
+            padding: 2rem;
+            background: radial-gradient(circle at center, #222222 0%, var(--dark-black) 100%);
+        }
+
+        .content-wrapper {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 0 30px rgba(247, 128, 41, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(247, 128, 41, 0.2);
+        }
+
+        #videoFeed {
+            width: 100%;
+            border-radius: 10px;
+            background-color: #000;
+        }
+
+        .controls {
+            margin-top: 2rem;
+            text-align: center;
+        }
+
+        .btn-start {
+            background-color: var(--primary-orange);
+            border: none;
+            color: white;
+        }
+
+        .btn-stop {
+            background-color: transparent;
+            border: 2px solid var(--primary-orange);
+            color: var(--primary-orange);
+        }
+
+        .btn-stop:hover {
+            background-color: var(--primary-orange);
+            color: white;
+        }
+
+        .status-message {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(247, 128, 41, 0.2);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            background-color: rgba(247, 128, 41, 0.1);
+            border-top: 1px solid rgba(247, 128, 41, 0.2);
+        }
+
+        /* Animation for status messages */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .status-message {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .wrapper {
+            display: flex;
+            width: 100%;
+        }
+
+        .sidebar {
+            width: 350px;
+            background: linear-gradient(145deg, rgba(0, 0, 0, 0.9), rgba(17, 17, 17, 0.95));
+            border-right: 1px solid rgba(247, 128, 41, 0.2);
+            height: calc(100vh - 116px);
+            overflow-y: auto;
+            position: sticky;
+            top: 116px;
+            padding: 1.5rem;
+            box-shadow: 5px 0 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .sidebar-header {
+            color: var(--primary-orange);
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid rgba(247, 128, 41, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .users-list {
+            padding: 1rem;
+        }
+
+        .user-item {
+            background: rgba(247, 128, 41, 0.05);
+            border: 1px solid rgba(247, 128, 41, 0.2);
+            border-radius: 12px;
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .user-item:hover {
+            transform: translateX(5px);
+            background: rgba(247, 128, 41, 0.1);
+            border-color: rgba(247, 128, 41, 0.4);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .user-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--primary-orange);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .user-item:hover::before {
+            opacity: 1;
+        }
+
+        .user-name {
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-name i {
+            color: var(--primary-orange);
+            font-size: 1rem;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 0.8rem;
+        }
+
+        .btn-action {
+            flex: 1;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-edit {
+            background-color: transparent;
+            border: 1px solid var(--primary-orange);
+            color: var(--primary-orange);
+        }
+
+        .btn-edit:hover {
+            background-color: var(--primary-orange);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .btn-delete {
+            background-color: transparent;
+            border: 1px solid #dc3545;
+            color: #dc3545;
+        }
+
+        .btn-delete:hover {
+            background-color: #dc3545;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .main-content {
+            flex: 1;
+        }
+
+        /* Scrollbar styling */
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(247, 128, 41, 0.1);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: var(--primary-orange);
+            border-radius: 3px;
+        }
+
+        .modal-content {
+            background-color: var(--dark-black) !important;
+            border: 1px solid var(--primary-orange);
+        }
+
+        .border-orange {
+            border-color: var(--primary-orange) !important;
+        }
+
+        .image-container {
+            position: relative;
+            width: 150px;
+            height: 150px;
+        }
+
+        .image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid var(--primary-orange);
+        }
+
+        .delete-image {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(220, 53, 69, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .delete-image:hover {
+            background: rgb(220, 53, 69);
+        }
+
+        .image-preview {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid var(--primary-orange);
+        }
+
+        .image-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: red;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toast {
+            border: 1px solid var(--primary-orange);
+        }
+        
+        .toast-header {
+            border-bottom: 1px solid var(--primary-orange);
+        }
+        
+        .btn-close-white {
+            filter: invert(1) grayscale(100%) brightness(200%);
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            color: var(--primary-orange);
+            margin-bottom: 1rem;
+        }
+
+        /* Loading animation */
+        @keyframes shimmer {
+            0% {
+                background-position: -468px 0;
+            }
+            100% {
+                background-position: 468px 0;
+            }
+        }
+
+        .loading-item {
+            background: linear-gradient(
+                to right,
+                rgba(247, 128, 41, 0.1) 8%,
+                rgba(247, 128, 41, 0.2) 18%,
+                rgba(247, 128, 41, 0.1) 33%
+            );
+            background-size: 800px 104px;
+            animation: shimmer 2s infinite linear;
+            height: 80px;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+        }
+
+        .modal-content {
+            background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
+            box-shadow: 0 0 30px rgba(247, 128, 41, 0.2);
+        }
+
+        .modal-header {
+            background: rgba(247, 128, 41, 0.05);
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            color: var(--primary-orange);
+        }
+
+        .text-orange {
+            color: var(--primary-orange) !important;
+        }
+
+        .border-orange {
+            border-color: var(--primary-orange) !important;
+        }
+
+        .modal .form-control:focus {
+            box-shadow: 0 0 0 0.25rem rgba(247, 128, 41, 0.25);
+        }
+
+        .modal .input-group-text {
+            border-right: none;
+        }
+
+        .modal .form-control {
+            border-left: none;
+        }
+
+        #currentImages {
+            background: rgba(247, 128, 41, 0.05);
+            min-height: 100px;
+        }
+
+        .modal-footer {
+            background: rgba(247, 128, 41, 0.05);
+        }
+
+        /* Modal animations and effects */
+        .modal.fade .modal-dialog {
+            transform: scale(0.7);
+            transition: transform 0.3s ease-out;
+        }
+        
+        .modal.show .modal-dialog {
+            transform: scale(1);
+        }
+
+        /* Animated header background */
+        .modal-header-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, 
+                rgba(247, 128, 41, 0.1),
+                rgba(247, 128, 41, 0.2),
+                rgba(247, 128, 41, 0.1));
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Title icon animation */
+        .title-icon-wrapper {
+            display: inline-block;
+            padding: 10px;
+            border-radius: 50%;
+            background: rgba(247, 128, 41, 0.1);
+            margin-right: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(247, 128, 41, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(247, 128, 41, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(247, 128, 41, 0); }
+        }
+
+        /* Input glow effect */
+        .glow-wrapper {
+            position: relative;
+        }
+
+        .glow-effect {
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border-radius: 6px;
+            background: linear-gradient(45deg, 
+                rgba(247, 128, 41, 0.4),
+                rgba(247, 128, 41, 0.1),
+                rgba(247, 128, 41, 0.4));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: -1;
+        }
+
+        .input-group:focus-within .glow-effect {
+            opacity: 1;
+        }
+
+        /* Image gallery styling */
+        .image-gallery-container {
+            background: rgba(247, 128, 41, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            position: relative;
+            min-height: 150px;
+            transition: all 0.3s ease;
+        }
+
+        .image-gallery-container:hover {
+            background: rgba(247, 128, 41, 0.08);
+        }
+
+        /* Upload zone styling */
+        .upload-zone {
+            position: relative;
+            border: 2px dashed var(--primary-orange);
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .upload-zone:hover {
+            background: rgba(247, 128, 41, 0.05);
+        }
+
+        .upload-placeholder {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--primary-orange);
+        }
+
+        .upload-placeholder i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        /* Ripple effect for buttons */
+        .ripple {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ripple:after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s ease-out, height 0.3s ease-out;
+        }
+
+        .ripple:active:after {
+            width: 200px;
+            height: 200px;
+        }
+
+        /* Image preview animations */
+        .image-preview {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .image-preview:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(247, 128, 41, 0.3);
+        }
+
+        /* Delete button hover effect */
+        .delete-btn {
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.3s ease;
+        }
+
+        .image-container:hover .delete-btn {
+            opacity: 1;
+            transform: scale(1);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('welcome') }}">
+                <img src="/static/pic/aa.png" alt="Logo" class="navbar-logo">
+                <span>Smart Vision</span>
+            </a>
+            <div class="d-flex gap-3">
+                <a href="{{ url_for('welcome') }}" class="btn btn-custom btn-home">
+                    <i class="fas fa-home"></i>
+                    Home
+                </a>
+                <a href="{{ url_for('upload_page') }}" class="btn btn-custom btn-upload">
+                    <i class="fas fa-upload"></i>
+                    Upload
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                Users List
+            </div>
+            <div class="users-list" id="usersList">
+                <!-- Users will be dynamically added here -->
+            </div>
+        </aside>
+        
+        <div class="main-content">
+            <div class="main-container">
+                <div class="content-wrapper">
+                    <div class="video-container">
+                        <img id="videoFeed" src="{{ url_for('video_feed') }}" alt="Video Feed">
+                    </div>
+
+                    <div class="controls">
+                        <button id="startCamera" class="btn btn-custom btn-start me-2">
+                            <i class="fas fa-play me-2"></i>Start Camera
+                        </button>
+                        <button id="stopCamera" class="btn btn-custom btn-stop">
+                            <i class="fas fa-stop me-2"></i>Stop Camera
+                        </button>
+                    </div>
+
+                    <div id="statusMessage" class="status-message text-center" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p class="mb-0">&copy; 2024 Smart Vision. All rights reserved.</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        // Function to load users
+        async function loadUsers() {
+            const usersList = document.getElementById('usersList');
+            
+            // Show loading state
+            usersList.innerHTML = `
+                <div class="loading-item"></div>
+                <div class="loading-item"></div>
+                <div class="loading-item"></div>
+            `;
+
+            try {
+                const response = await fetch('/api/users');
+                const data = await response.json();
+                
+                // Clear loading state
+                usersList.innerHTML = '';
+                
+                if (data.length === 0) {
+                    usersList.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-users"></i>
+                            <p>No users found</p>
+                            <small>Upload photos to add users</small>
+                        </div>
+                    `;
+                    return;
+                }
+
+                data.forEach(user => {
+                    const userItem = document.createElement('div');
+                    userItem.className = 'user-item animate_animated animate_fadeIn';
+                    userItem.innerHTML = `
+                        <div class="user-name">
+                            <i class="fas fa-user-circle"></i>
+                            ${user}
+                        </div>
+                        <div class="user-actions">
+                            <button class="btn btn-action btn-edit" onclick="editUser('${user}')">
+                                <i class="fas fa-edit"></i>
+                                Edit
+                            </button>
+                            <button class="btn btn-action btn-delete" onclick="deleteUser('${user}')">
+                                <i class="fas fa-trash"></i>
+                                Delete
+                            </button>
+                        </div>
+                    `;
+                    usersList.appendChild(userItem);
+                });
+            } catch (error) {
+                console.error('Error loading users:', error);
+                usersList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <p>Error loading users</p>
+                        <small>${error.message}</small>
+                    </div>
+                `;
+            }
+        }
+
+        // Make sure loadUsers is called when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Page loaded, calling loadUsers');
+            loadUsers();
+        });
+
+        // Refresh users list every 30 seconds
+        setInterval(loadUsers, 30000);
+
+        // Function to delete user
+        async function deleteUser(username) {
+            if (!confirm(`Are you sure you want to delete ${username}?`)) return;
+
+            try {
+                const response = await fetch('/api/users/${username}', {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    loadUsers(); // Reload the users list
+                } else {
+                    alert('Error deleting user: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error deleting user:', error);
+                alert('Error deleting user');
+            }
+        }
+
+        // Function to edit user
+        function editUser(username) {
+            // Implement edit functionality
+            alert('Edit functionality coming soon for: ' + username);
+        }
+
+        let editModal;
+        let currentFiles = new Set();
+        let newFiles = new Set();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            editModal = new bootstrap.Modal(document.getElementById('editUserModal'));
+            successToast = new bootstrap.Toast(document.getElementById('successToast'));
+        });
+
+        async function editUser(username) {
+            try {
+                // Set usernames
+                document.getElementById('editUsername').value = username;
+                document.getElementById('originalUsername').value = username;
+                
+                // Clear previous images
+                document.getElementById('currentImages').innerHTML = '';
+                document.getElementById('newImages').value = '';
+
+                // Load user's images
+                const response = await fetch('/api/users/${username}/images');
+                const images = await response.json();
+                
+                // Display current images
+                const currentImagesDiv = document.getElementById('currentImages');
+                images.forEach(image => {
+                    const container = document.createElement('div');
+                    container.className = 'image-container me-2 mb-2';
+                    
+                    const img = document.createElement('img');
+                    img.src = '/data/${username}/${image}';
+                    img.className = 'image-preview';
+                    img.alt = image;
+                    
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'delete-btn';
+                    deleteBtn.innerHTML = '×';
+                    deleteBtn.onclick = () => container.remove();
+                    
+                    container.appendChild(img);
+                    container.appendChild(deleteBtn);
+                    currentImagesDiv.appendChild(container);
+                });
+
+                editModal.show();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error loading user data');
+            }
+        }
+
+        async function saveChanges() {
+            try {
+                // Show loading state
+                const saveButton = document.querySelector('.modal-footer .btn-primary');
+                const originalText = saveButton.innerHTML;
+                saveButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+                saveButton.disabled = true;
+
+                const formData = new FormData();
+                const newUsername = document.getElementById('editUsername').value;
+                const originalUsername = document.getElementById('originalUsername').value;
+                
+                formData.append('newUsername', newUsername);
+                formData.append('originalUsername', originalUsername);
+                
+                // Add new images
+                const newImages = document.getElementById('newImages').files;
+                for (let file of newImages) {
+                    formData.append('newFiles', file);
+                }
+                
+                // Add list of kept images
+                const keptImages = Array.from(document.querySelectorAll('.image-preview'))
+                                      .map(img => img.alt);
+                formData.append('keptImages', JSON.stringify(keptImages));
+
+                const response = await fetch('/api/users/edit', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    editModal.hide();
+                    loadUsers();
+                    
+                    // Show success toast
+                    document.querySelector('.toast-body').textContent = result.message;
+                    successToast.show();
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error saving changes: ' + error.message);
+            } finally {
+                // Reset button state
+                const saveButton = document.querySelector('.modal-footer .btn-primary');
+                saveButton.innerHTML = 'Save Changes';
+                saveButton.disabled = false;
+            }
+        }
+    </script>
+
+    <!-- Update the modal HTML -->
+    <div class="modal fade" id="editUserModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-bottom border-orange position-relative overflow-hidden">
+                    <!-- Animated background effect -->
+                    <div class="modal-header-bg"></div>
+                    
+                    <h5 class="modal-title position-relative">
+                        <div class="title-icon-wrapper">
+                            <i class="fas fa-user-edit"></i>
+                        </div>
+                        Edit User Profile
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white position-relative" data-bs-dismiss="modal"></button>
+                </div>
+                
+                <div class="modal-body">
+                    <form id="editUserForm">
+                        <div class="mb-4 input-wrapper">
+                            <label class="form-label text-orange">Username</label>
+                            <div class="input-group glow-wrapper">
+                                <span class="input-group-text bg-dark border-orange">
+                                    <i class="fas fa-user"></i>
+                                </span>
+                                <input type="text" class="form-control bg-dark text-white border-orange" id="editUsername" required>
+                                <input type="hidden" id="originalUsername">
+                                <div class="glow-effect"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label text-orange">Current Images</label>
+                            <div id="currentImages" class="image-gallery-container">
+                                <div class="gallery-overlay"></div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label text-orange">Add New Images</label>
+                            <div class="upload-zone">
+                                <input type="file" class="form-control bg-dark text-white border-orange" 
+                                       id="newImages" multiple accept="image/*">
+                                <div class="upload-placeholder">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="modal-footer border-top border-orange">
+                    <button type="button" class="btn btn-custom btn-home ripple" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-custom btn-upload ripple" onclick="saveChanges()">
+                        <i class="fas fa-save me-2"></i>Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add this toast container right after the modal -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div id="successToast" class="toast" role="alert">
+            <div class="toast-header bg-success text-white">
+                <strong class="me-auto">Success</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body bg-dark text-white">
+                Changes saved and processed successfully!
+            </div>
+        </div>
+    </div>
+</body>
+</html>
