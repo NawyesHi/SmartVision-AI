@@ -757,9 +757,9 @@
     <script>
         // Function to load users
         async function loadUsers() {
-            const usersList = document.getElementById('usersList');
+            const usersList = document.getElementById('usersList'); //pour récupérer la liste des utilisateurs
             
-            // Show loading state
+                // Show loading state
             usersList.innerHTML = `
                 <div class="loading-item"></div>
                 <div class="loading-item"></div>
@@ -767,26 +767,26 @@
             `;
 
             try {
-                const response = await fetch('/api/users');
-                const data = await response.json();
+                const response = await fetch('/api/users'); //pour récupérer les utilisateurs depuis l'API
+                const data = await response.json(); //pour récupérer les données des utilisateurs
                 
                 // Clear loading state
-                usersList.innerHTML = '';
+                usersList.innerHTML = ''; //pour effacer la liste des utilisateurs
                 
-                if (data.length === 0) {
+                if (data.length === 0) { //pour vérifier si la liste des utilisateurs est vide
                     usersList.innerHTML = `
                         <div class="empty-state">
                             <i class="fas fa-users"></i>
                             <p>No users found</p>
                             <small>Upload photos to add users</small>
                         </div>
-                    `;
+                    `; //pour afficher un message indiquant que la liste des utilisateurs est vide
                     return;
                 }
 
                 data.forEach(user => {
                     const userItem = document.createElement('div');
-                    userItem.className = 'user-item animate_animated animate_fadeIn';
+                    userItem.className = 'user-item animate_animated animate_fadeIn'; //pour ajouter une classe CSS pour animer l'affichage des utilisateurs    
                     userItem.innerHTML = `
                         <div class="user-name">
                             <i class="fas fa-user-circle"></i>
@@ -803,157 +803,180 @@
                             </button>
                         </div>
                     `;
-                    usersList.appendChild(userItem);
+                    usersList.appendChild(userItem); //pour ajouter l'utilisateur à la liste
                 });
-            } catch (error) {
-                console.error('Error loading users:', error);
+            } catch (error) { //pour gérer les erreurs
+                console.error('Error loading users:', error); //pour afficher un message d'erreur dans la console   
                 usersList.innerHTML = `
                     <div class="empty-state">
                         <i class="fas fa-exclamation-circle"></i>
                         <p>Error loading users</p>
                         <small>${error.message}</small>
                     </div>
-                `;
+                `; //pour afficher un message d'erreur dans la liste des utilisateurs
             }
         }
 
         // Make sure loadUsers is called when the page loads
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('Page loaded, calling loadUsers');
+            console.log('Page loaded, calling loadUsers'); //pour afficher un message dans la console indiquant que la page est chargée et que loadUsers est appelé
             loadUsers();
         });
 
         // Refresh users list every 30 seconds
-        setInterval(loadUsers, 30000);
+        setInterval(loadUsers, 30000); //pour rafraîchir la liste des utilisateurs toutes les 30 secondes
 
         // Function to delete user
         async function deleteUser(username) {
-            if (!confirm(`Are you sure you want to delete ${username}?`)) return;
+            if (!confirm('Are you sure you want to delete this user?')) { //pour demander confirmation avant de supprimer un utilisateur
+                return;
+            }
 
             try {
-                const response = await fetch('/api/users/${username}', {
-                    method: 'DELETE'
+                const response = await fetch(`/api/users/${username}`, { //pour envoyer une requête DELETE à l'API pour supprimer l'utilisateur
+                    method: 'DELETE', //pour spécifier que c'est une requête DELETE
+                    headers: {
+                        'Content-Type': 'application/json' //pour spécifier que le contenu est en JSON
+                    }
                 });
-                const result = await response.json();
+
+                const result = await response.json(); //pour récupérer la réponse de l'API
                 
-                if (result.status === 'success') {
-                    loadUsers(); // Reload the users list
+                if (result.status === 'success') { //pour vérifier si la requête a réussi
+                    // Remove the user item from the list
+                    const userItem = document.querySelector(`.user-item:has(button[onclick="deleteUser('${username}')"])`);
+                    if (userItem) {
+                        userItem.remove(); //pour supprimer l'utilisateur de la liste
+                    }
+                    
+                    // Show success toast
+                    document.querySelector('.toast-body').textContent = result.message;
+                    successToast.show(); //pour afficher un message de succès
+                    
+                    // Reload users list if no users left
+                    if (document.querySelectorAll('.user-item').length === 0) {
+                        loadUsers(); //pour rafraîchir la liste des utilisateurs si aucun utilisateur n'est présent
+                    }
                 } else {
-                    alert('Error deleting user: ' + result.message);
+                    throw new Error(result.message); //pour gérer les erreurs
                 }
             } catch (error) {
-                console.error('Error deleting user:', error);
-                alert('Error deleting user');
+                console.error('Error:', error); //pour afficher un message d'erreur dans la console
+                alert('Error deleting user: ' + error.message); //pour afficher un message d'erreur dans la console
             }
         }
 
         // Function to edit user
         function editUser(username) {
             // Implement edit functionality
-            alert('Edit functionality coming soon for: ' + username);
+            alert('Edit functionality coming soon for: ' + username); //pour afficher un message indiquant que la fonctionnalité d'édition est en cours de développement
         }
 
-        let editModal;
-        let currentFiles = new Set();
-        let newFiles = new Set();
+        let editModal; //pour récupérer le modal d'édition  
+        let currentFiles = new Set(); //pour stocker les images actuelles
+        let newFiles = new Set(); //pour stocker les nouvelles images
 
         document.addEventListener('DOMContentLoaded', () => {
-            editModal = new bootstrap.Modal(document.getElementById('editUserModal'));
-            successToast = new bootstrap.Toast(document.getElementById('successToast'));
+            editModal = new bootstrap.Modal(document.getElementById('editUserModal')); //pour récupérer le modal d'édition
+            successToast = new bootstrap.Toast(document.getElementById('successToast')); //pour récupérer le toast de succès
         });
 
         async function editUser(username) {
             try {
                 // Set usernames
-                document.getElementById('editUsername').value = username;
-                document.getElementById('originalUsername').value = username;
+                document.getElementById('editUsername').value = username; //pour récupérer le nom de l'utilisateur à éditer
+                document.getElementById('originalUsername').value = username; //pour récupérer le nom de l'utilisateur à éditer 
                 
                 // Clear previous images
-                document.getElementById('currentImages').innerHTML = '';
-                document.getElementById('newImages').value = '';
+                document.getElementById('currentImages').innerHTML = ''; //pour effacer les images actuelles
+                document.getElementById('newImages').value = ''; //pour effacer les nouvelles images
 
                 // Load user's images
-                const response = await fetch('/api/users/${username}/images');
-                const images = await response.json();
+                const response = await fetch('/api/users/${username}/images'); //pour récupérer les images de l'utilisateur
+                const images = await response.json(); //pour récupérer les images de l'utilisateur
                 
                 // Display current images
                 const currentImagesDiv = document.getElementById('currentImages');
                 images.forEach(image => {
                     const container = document.createElement('div');
-                    container.className = 'image-container me-2 mb-2';
+                    container.className = 'image-container me-2 mb-2'; //pour ajouter une classe CSS pour les images
                     
                     const img = document.createElement('img');
-                    img.src = '/data/${username}/${image}';
-                    img.className = 'image-preview';
-                    img.alt = image;
+                    img.src = '/data/${username}/${image}'; //pour récupérer les images de l'utilisateur
+                        img.className = 'image-preview'; //pour ajouter une classe CSS pour les images
+                    img.alt = image; //pour ajouter un attribut alt pour les images
                     
                     const deleteBtn = document.createElement('button');
-                    deleteBtn.className = 'delete-btn';
-                    deleteBtn.innerHTML = '×';
-                    deleteBtn.onclick = () => container.remove();
+                    deleteBtn.className = 'delete-btn'; //pour ajouter une classe CSS pour le bouton de suppression 
+                    deleteBtn.innerHTML = '×'; //pour ajouter un contenu pour le bouton de suppression
+                    deleteBtn.onclick = () => container.remove(); //pour supprimer l'image lorsque le bouton de suppression est cliqué
                     
-                    container.appendChild(img);
-                    container.appendChild(deleteBtn);
-                    currentImagesDiv.appendChild(container);
+                    container.appendChild(img); //pour ajouter l'image à la conteneur
+                    container.appendChild(deleteBtn); //pour ajouter le bouton de suppression à la conteneur
+                    currentImagesDiv.appendChild(container); //pour ajouter la conteneur à la liste des images actuelles
                 });
 
                 editModal.show();
             } catch (error) {
-                console.error('Error:', error);
-                alert('Error loading user data');
+                console.error('Error:', error); //pour afficher un message d'erreur dans la console
+                alert('Error loading user data'); //pour afficher un message d'erreur dans la console
             }
         }
 
-        async function saveChanges() {
+        async function saveChanges() { //pour enregistrer les modifications 
             try {
-                // Show loading state
-                const saveButton = document.querySelector('.modal-footer .btn-primary');
-                const originalText = saveButton.innerHTML;
-                saveButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
-                saveButton.disabled = true;
+                const saveButton = document.querySelector('#editUserModal .modal-footer .btn-upload'); //pour récupérer le bouton d'enregistrement
+                const originalText = saveButton.innerHTML; //pour récupérer le texte original du bouton d'enregistrement
+                saveButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...'; //pour ajouter un indicateur de chargement
+                saveButton.disabled = true; //pour désactiver le bouton d'enregistrement
 
-                const formData = new FormData();
-                const newUsername = document.getElementById('editUsername').value;
-                const originalUsername = document.getElementById('originalUsername').value;
+                const formData = new FormData(); //pour créer un objet FormData pour envoyer les données du formulaire
+                const newUsername = document.getElementById('editUsername').value; //pour récupérer le nouveau nom de l'utilisateur
+                const originalUsername = document.getElementById('originalUsername').value; //pour récupérer le nom de l'utilisateur original
                 
-                formData.append('newUsername', newUsername);
-                formData.append('originalUsername', originalUsername);
+                formData.append('newUsername', newUsername); //pour ajouter le nouveau nom de l'utilisateur à l'objet FormData
+                formData.append('originalUsername', originalUsername); //pour ajouter le nom de l'utilisateur original à l'objet FormData
                 
                 // Add new images
-                const newImages = document.getElementById('newImages').files;
-                for (let file of newImages) {
-                    formData.append('newFiles', file);
+                const newImages = document.getElementById('newImages').files; //pour récupérer les nouvelles images 
+                for (let file of newImages) { //pour ajouter les nouvelles images à l'objet FormData
+                    formData.append('newFiles', file); //pour ajouter les nouvelles images à l'objet FormData
                 }
                 
                 // Add list of kept images
-                const keptImages = Array.from(document.querySelectorAll('.image-preview'))
-                                      .map(img => img.alt);
-                formData.append('keptImages', JSON.stringify(keptImages));
+                const keptImages = Array.from(document.querySelectorAll('#currentImages .image-preview'))
+                                      .map(img => img.getAttribute('alt'))
+                                      .filter(name => name); //pour filtrer les valeurs nulles
+                formData.append('keptImages', JSON.stringify(keptImages)); //pour ajouter les images conservées à l'objet FormData
 
                 const response = await fetch('/api/users/edit', {
                     method: 'POST',
                     body: formData
                 });
 
-                const result = await response.json();
-                if (result.status === 'success') {
-                    editModal.hide();
-                    loadUsers();
+                const result = await response.json(); //pour récupérer la réponse de l'API
+                if (result.status === 'success') { //pour vérifier si la requête a réussi
+                    const editModal = bootstrap.Modal.getInstance(document.getElementById('editUserModal'));
+                    editModal.hide(); //pour masquer le modal d'édition
+                    loadUsers(); //pour rafraîchir la liste des utilisateurs
                     
                     // Show success toast
                     document.querySelector('.toast-body').textContent = result.message;
+                    const successToast = new bootstrap.Toast(document.getElementById('successToast'));
                     successToast.show();
                 } else {
-                    throw new Error(result.message);
-                }
+                    throw new Error(result.message); //pour gérer les erreurs
+                } 
             } catch (error) {
-                console.error('Error:', error);
-                alert('Error saving changes: ' + error.message);
+                console.error('Error:', error); //pour afficher un message d'erreur dans la console
+                alert('Error saving changes: ' + error.message); //pour afficher un message d'erreur dans la console
             } finally {
                 // Reset button state
-                const saveButton = document.querySelector('.modal-footer .btn-primary');
-                saveButton.innerHTML = 'Save Changes';
-                saveButton.disabled = false;
+                const saveButton = document.querySelector('#editUserModal .modal-footer .btn-upload');
+                if (saveButton) { //pour vérifier si le bouton d'enregistrement existe
+                    saveButton.innerHTML = '<i class="fas fa-save me-2"></i>Save Changes'; //pour réinitialiser le texte du bouton d'enregistrement
+                    saveButton.disabled = false; //pour activer le bouton d'enregistrement
+                }
             }
         }
     </script>
@@ -1029,9 +1052,21 @@
                 <strong class="me-auto">Success</strong>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
             </div>
-            <div class="toast-body bg-dark text-white">
-                Changes saved and processed successfully!
+            <div class="toast-body bg-dark text-white"> 
+                Changes saved and processed successfully! 
             </div>
+        </div>
+    </div>
+
+    <!-- Add this right after your edit modal -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div class="toast" id="successToast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i class="fas fa-check-circle text-success me-2"></i>
+                <strong class="me-auto">Success</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body"></div>
         </div>
     </div>
 </body>

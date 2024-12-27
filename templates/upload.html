@@ -402,7 +402,7 @@
                     <i class="fas fa-cloud-upload-alt upload-icon"></i>
                     <p class="mb-3">Drag & Drop images here or click to select</p>
                     <input type="file" id="fileInput" multiple accept="image/*" style="display: none">
-                    <button type="button" class="btn btn-custom" onclick="document.getElementById('fileInput').click()">
+                    <button type="button" class="btn btn-custom" onclick="document.getElementById('fileInput').click()"> #pour ouvrir la boite de dialogue de sélection de fichiers
                         <i class="fas fa-images me-2"></i>
                         Select Files
                     </button>
@@ -424,36 +424,140 @@
 
     <!-- Footer remains the same -->
 
-    <!-- Previous JavaScript remains the same but update the preview function -->
+    <!-- Previous JavaScript remains the same but update the preview function -->   
     <script>
-        // ... (previous JavaScript code)
+        const uploadForm = document.getElementById('uploadForm'); //pour récupérer le formulaire                    
+        const fileInput = document.getElementById('fileInput'); //pour récupérer le champ de sélection de fichiers
+        const dragArea = document.getElementById('dragArea'); //pour récupérer la zone de glisser-déposer
+        const previewContainer = document.getElementById('previewContainer'); //pour récupérer le conteneur des images prévisualisées
+        const statusMessage = document.getElementById('statusMessage'); //pour récupérer le message de statut
+        const uploadButton = document.getElementById('uploadButton'); //pour récupérer le bouton d'envoi
 
+        // Handle drag and drop events
+        dragArea.addEventListener('dragover', (e) => { //pour gérer l'événement de glisser-déposer      
+            e.preventDefault();
+            dragArea.style.borderColor = 'var(--primary-orange)'; //pour changer la couleur de la bordure
+        });
+
+        dragArea.addEventListener('dragleave', () => { //pour gérer l'événement de glisser-déposer
+            dragArea.style.borderColor = 'rgba(247, 128, 41, 0.3)'; //pour changer la couleur de la bordure         
+        });
+
+        dragArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragArea.style.borderColor = 'rgba(247, 128, 41, 0.3)'; //pour changer la couleur de la bordure                 
+            const files = e.dataTransfer.files; //pour récupérer les fichiers
+            handleFiles(files); //pour gérer les fichiers
+        });
+
+        // Handle file input change
+        fileInput.addEventListener('change', (e) => { //pour gérer l'événement de changement de fichier
+            handleFiles(e.target.files); //pour gérer les fichiers
+        });
+
+        // Handle selected files
+        function handleFiles(files) {
+            Array.from(files).forEach(file => {
+                if (file.type.startsWith('image/')) { //pour vérifier si le fichier est une image
+                    previewFile(file); //pour prévisualiser le fichier
+                }
+            });
+        }
+
+        // Preview file function
         function previewFile(file) {
-            if (!file.type.startsWith('image/')) return;
-            
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
+            const reader = new FileReader(); //pour lire le fichier
+            reader.readAsDataURL(file); //pour lire le fichier en tant que données URL          
             reader.onloadend = function() {
-                const container = document.createElement('div');
-                container.className = 'preview-image-container';
+                const container = document.createElement('div'); //pour créer un conteneur pour l'image
+                container.className = 'preview-image-container'; //pour ajouter une classe CSS à l'image    
 
-                const img = document.createElement('img');
-                img.src = reader.result;
-                img.className = 'preview-image';
+                const img = document.createElement('img'); //pour créer une image
+                img.src = reader.result; //pour définir la source de l'image
+                img.className = 'preview-image'; //pour ajouter une classe CSS à l'image    
 
-                const overlay = document.createElement('div');
-                overlay.className = 'preview-overlay';
+                const overlay = document.createElement('div'); //pour créer un conteneur pour l'image
+                overlay.className = 'preview-overlay'; //pour ajouter une classe CSS à l'image    
 
-                const removeBtn = document.createElement('button');
-                removeBtn.className = 'remove-image';
-                removeBtn.innerHTML = '<i class="fas fa-times"></i>';
-                removeBtn.onclick = () => container.remove();
+                const removeBtn = document.createElement('button'); //pour créer un bouton pour supprimer l'image
+                removeBtn.className = 'remove-image'; //pour ajouter une classe CSS à l'image    
+                removeBtn.innerHTML = '<i class="fas fa-times"></i>'; //pour ajouter un icône de croix à l'image    
+                removeBtn.onclick = () => container.remove(); //pour supprimer l'image    
 
-                overlay.appendChild(removeBtn);
-                container.appendChild(img);
-                container.appendChild(overlay);
-                previewContainer.appendChild(container);
+                overlay.appendChild(removeBtn); //pour ajouter le bouton de suppression à l'image       
+                container.appendChild(img); //pour ajouter l'image à l'image    
+                container.appendChild(overlay); //pour ajouter l'image à l'image    
+                previewContainer.appendChild(container); //pour ajouter l'image à l'image    
             }
+        }
+
+        // Handle form submission
+        uploadForm.addEventListener('submit', async function(e) { //pour gérer l'événement de soumission du formulaire  
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            if (!username) {
+                showStatus('Please enter a username', 'error'); //pour afficher un message d'erreur si le champ de nom d'utilisateur est vide
+                return;
+            }
+
+            // Check both file input and preview container for images
+            const previewImages = previewContainer.getElementsByClassName('preview-image-container');
+            if (previewImages.length === 0) {
+                showStatus('Please select at least one image', 'error'); //pour afficher un message d'erreur si aucune image n'est sélectionnée
+                return;
+            }
+
+            uploadButton.disabled = true;
+            uploadButton.classList.add('loading'); //pour ajouter une classe CSS pour indiquer que le bouton est en cours de chargement
+
+            const formData = new FormData(); //pour créer un objet FormData pour envoyer les données du formulaire
+            formData.append('username', username); //pour ajouter le nom d'utilisateur au formulaire
+            
+            // Get files from preview container
+            const previewedImages = Array.from(previewContainer.getElementsByClassName('preview-image')); //pour récupérer les images prévisualisées    
+            for (let img of previewedImages) { //pour parcourir les images prévisualisées
+                // Convert base64 image back to file
+                const response = await fetch(img.src); //pour récupérer la réponse de la requête
+                const blob = await response.blob(); //pour récupérer le blob de l'image
+                const file = new File([blob], `image-${Date.now()}.jpg`, { type: 'image/jpeg' }); //pour créer un fichier à partir du blob
+                formData.append('files[]', file); //pour ajouter le fichier au formulaire
+            }
+
+            try {
+                const response = await fetch('/api/upload', { //pour envoyer les données du formulaire à l'API
+                    method: 'POST', //pour spécifier que c'est une requête POST
+                    body: formData //pour envoyer les données du formulaire
+                });
+
+                const result = await response.json(); //pour récupérer la réponse de l'API
+                
+                if (response.ok) { //pour vérifier si la requête a réussi
+                    showStatus('Files uploaded successfully!', 'success'); //pour afficher un message de succès
+                    previewContainer.innerHTML = ''; //pour effacer les images prévisualisées
+                    uploadForm.reset(); //pour réinitialiser le formulaire
+                } else {
+                    showStatus(result.error || 'Upload failed', 'error'); //pour afficher un message d'erreur si la requête a échoué
+                }
+            } catch (error) {
+                console.error('Upload error:', error); //pour afficher un message d'erreur si la requête a échoué
+                    showStatus('Error uploading files', 'error'); //pour afficher un message d'erreur si la requête a échoué
+            } finally {
+                uploadButton.disabled = false; //pour réactiver le bouton d'envoi
+                uploadButton.classList.remove('loading'); //pour supprimer la classe CSS pour indiquer que le bouton est en cours de chargement
+            }
+        });
+
+        function showStatus(message, type) {
+            statusMessage.textContent = message; //pour afficher le message de statut   
+            statusMessage.style.display = 'block'; //pour afficher le message de statut
+            statusMessage.style.backgroundColor = type === 'error' ? 'rgba(220, 53, 69, 0.2)' : 'rgba(25, 135, 84, 0.2)'; //pour changer la couleur de fond du message de statut
+            statusMessage.style.color = type === 'error' ? '#dc3545' : '#198754'; //pour changer la couleur du texte du message de statut
+            statusMessage.style.border = `1px solid ${type === 'error' ? '#dc3545' : '#198754'}`; //pour changer la couleur de la bordure du message de statut
+
+            setTimeout(() => {
+                statusMessage.style.display = 'none'; //pour masquer le message de statut après 5 secondes
+            }, 5000);
         }
     </script>
 </body>
